@@ -29,9 +29,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -107,7 +109,15 @@ public class ClearCaseRepository extends Repository {
             cmd.add("-dir");
         }
         cmd.add("-fmt");
-        cmd.add("%e\n%Nd\n%Fu (%u)\n%Vn\n%Nc\n.\n");
+		//
+		// Copyright 2009 to current year.
+		// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+		//
+		// Only add username to history, for use with SharePoint user
+		// directory.
+		//
+        cmd.add("%e\n%Nd\n%u\n%Vn\n%Nc\n.\n");
         cmd.add(filename);
 
         return new Executor(cmd, new File(getDirectoryName()));
@@ -180,23 +190,31 @@ public class ClearCaseRepository extends Repository {
      * @param in the stream to drain
      * @throws IOException if an I/O error occurs
      */
-    private static void drainStream(InputStream in) throws IOException {
-        while (true) {
-            long skipped = 0;
-            try {
-                skipped = in.skip(32768L);
-            } catch (IOException ioe) {
-                // ignored - stream isn't seekable, but skipped variable still
-                // has correct value.
-                LOGGER.log(Level.FINEST,
-                        "Stream not seekable", ioe);
-            }
-            if (skipped == 0 && in.read() == -1) {
-                // No bytes skipped, checked that we've reached EOF with read()
-                break;
-            }
-        }
-        IOUtils.close(in);
+	private static void drainStream(InputStream in) throws IOException {
+		//
+    	// Copyright 2009 to current year.
+    	// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+    	//
+		// Clearcase file revisions from history are not served in Windows
+		// (Bugzilla #19038) #519
+		// https://github.com/OpenGrok/OpenGrok/issues/519
+		//
+		while (true) {
+			try {
+				int to_skip = in.available();
+				in.skip(to_skip);
+			} catch (IOException ioe) {
+				// ignored - stream isn't seekable, but skipped variable still
+				// has correct value.
+				LOGGER.log(Level.FINEST, "Stream not seekable", ioe);
+			}
+			if (in.read() == -1) {
+				// No bytes skipped, checked that we've reached EOF with read()
+				break;
+			}
+		}
+		IOUtils.close(in);
     }
 
     /**
@@ -236,11 +254,18 @@ public class ClearCaseRepository extends Repository {
                     new InputStreamReader(process.getInputStream()))) {
                 while ((line = in.readLine()) != null) {
                     String parts[] = line.split("\\|");
-                    String aAuthor = parts[0];
+        			String aAuthor = parts[0];
                     String aRevision = parts[1];
                     aRevision = aRevision.replace('\\', '/');
 
-                    a.addLine(aRevision, aAuthor, true);
+                    //
+        			// Copyright 2009 to current year.
+        			// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+        			// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+        			//
+        			// Always add username in lower case (for consistency).
+        			//
+                    a.addLine(aRevision, aAuthor.toLowerCase(), true);
                 }
             }
             return a;
@@ -342,24 +367,54 @@ public class ClearCaseRepository extends Repository {
         // if the parent contains a file named "view.dat" or
         // the parent is named "vobs" or the canonical path
         // is found in "cleartool lsvob -s"
-        File f = new File(file, "view.dat");
-        if (f.exists()) {
-            return true;
-        } else if (file.isDirectory() && file.getName().equalsIgnoreCase("vobs")) {
-            return true;
-        } else if (isWorking()) {
-            try {
-                String canonicalPath = file.getCanonicalPath();
-                for (String vob : getAllVobs()) {
-                    if (canonicalPath.equalsIgnoreCase(vob)) {
-                        return true;
-                    }
-                }
-            } catch (IOException e) {
-                LOGGER.log(Level.WARNING,
-                        "Could not get canonical path for \"" + file + "\"", e);
-            }
-        }
+    	
+    	//
+    	// Copyright 2009 to current year.
+    	// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+    	//
+		// Use parent when detecting repos to get one repo per VOB.
+		//
+		File parent = file.getParentFile();
+		File f = new File(parent, "view.dat");
+		try {
+			if (parent != null && Files.isSameFile(file.toPath(), f.toPath())) {
+				return false;
+			}
+		} catch (Exception e) {
+			// ignore any exceptions, and move along...
+		}
+		if (parent != null && f.exists()) {
+			return true;
+		} else if (parent != null && parent.isDirectory() && parent.getName().equalsIgnoreCase("vobs")) {
+			return true;
+		} else if (isWorking()) {
+			try {
+				String canonicalPath = file.getCanonicalPath();
+				for (String vob : getAllVobs()) {
+					if (canonicalPath.equalsIgnoreCase(vob)) {
+						return true;
+					}
+				}
+			} catch (IOException e) {
+				LOGGER.log(Level.WARNING, "Could not get canonical path for \"" + file + "\"", e);
+			}
+		}
+		
+        //
+    	// Copyright 2009 to current year.
+    	// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+    	//
+		// Assume ClearCase repo if the _grandparent_ contains a
+        // file named ".specdev":
+        // http://www-01.ibm.com/support/docview.wss?uid=swg21135104
+		//
+        File grandparent = Optional.ofNullable(file.getParentFile())
+				.map(File::getParentFile).orElse(null);
+		if (grandparent != null && new File(grandparent, ".specdev").exists()) {
+			return true;
+		}
         return false;
     }
 

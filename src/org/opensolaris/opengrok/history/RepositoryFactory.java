@@ -45,6 +45,15 @@ public final class RepositoryFactory {
         new BitKeeperRepository(),
         new MercurialRepository(),
         new AccuRevRepository(),
+        //
+    	// Copyright 2009 to current year.
+    	// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+    	//
+        // Add Support for Team Foundation Server to OpenGrok #843
+        // https://github.com/OpenGrok/OpenGrok/issues/843
+        //
+        new TFRepository(),
         new BazaarRepository(),
         new GitRepository(),
         new MonotoneRepository(),

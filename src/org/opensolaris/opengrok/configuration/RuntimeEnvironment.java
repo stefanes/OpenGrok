@@ -381,6 +381,16 @@ public final class RuntimeEnvironment {
         }
         
         if (canonicalPath.startsWith(sourceRoot)) {
+        	//
+        	// Copyright 2009 to current year.
+        	// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+    		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+        	//
+			// Support for setting a Windows drive as source root
+        	//
+			if (sourceRoot.endsWith(File.separator)) {
+				return File.separator + canonicalPath.substring(sourceRoot.length() + stripCount);
+			}
             return canonicalPath.substring(sourceRoot.length() + stripCount);
         }
         for (String allowedSymlink : getAllowedSymlinks()) {
