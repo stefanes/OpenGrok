@@ -1,0 +1,8 @@
+title: Opengrok
+description: Main {OpenGrok git repository
+google_analytics: UA-3665334-1
+show_downloads: true
+theme: jekyll-theme-cayman
+
+gems:
+  - jekyll-mentions
