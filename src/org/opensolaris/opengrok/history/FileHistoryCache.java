@@ -635,26 +635,43 @@ class FileHistoryCache implements HistoryCache {
      * @param repository repository
      * @param rev latest revision which has been just indexed
      */
-    private void storeLatestCachedRevision(Repository repository, String rev) {
-        Writer writer = null;
+	private void storeLatestCachedRevision(Repository repository, String rev) {
+		Writer writer = null;
 
-        try {
-            writer = new BufferedWriter(new OutputStreamWriter(
-                  new FileOutputStream(getRepositoryCachedRevPath(repository))));
-            writer.write(rev);
-        } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "Cannot write latest cached revision to file for "+repository.getDirectoryName(),
-                ex);
-        } finally {
-           try {
-               if (writer != null) {
-                   writer.close();
-               }
-           } catch (IOException ex) {
-               LOGGER.log(Level.FINEST, "Cannot close file", ex);
-           }
-        }
-    }
+		//
+    	// Copyright 2009 to current year.
+    	// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+		// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+    	//
+		// WARNING: Cannot write latest cached revision to file #1297
+		// https://github.com/OpenGrok/OpenGrok/issues/1297
+		// https://github.com/tulinkry/OpenGrok/commit/f0dd85b110056913daa210e9c5b34d513139ae68
+		//
+		File file = new File(getRepositoryHistDataDirname(repository));
+		if (!file.exists() || !file.isDirectory()) {
+			if (!file.mkdirs()) {
+				LOGGER.log(Level.WARNING,
+						"Cannot create the history cache directory to write the latest cached revision for {}",
+						repository.getDirectoryName());
+			}
+		}
+		try {
+			writer = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(getRepositoryCachedRevPath(repository))));
+			writer.write(rev);
+		} catch (IOException ex) {
+			LOGGER.log(Level.WARNING,
+					"Cannot write latest cached revision to file for " + repository.getDirectoryName(), ex);
+		} finally {
+			try {
+				if (writer != null) {
+					writer.close();
+				}
+			} catch (IOException ex) {
+				LOGGER.log(Level.FINEST, "Cannot close file", ex);
+			}
+		}
+	}
 
     @Override
     public String getLatestCachedRevision(Repository repository) {

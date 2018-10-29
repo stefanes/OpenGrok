@@ -103,9 +103,16 @@ class ClearCaseHistoryParser implements Executor.StreamHandler {
                     throw new IOException("Could not parse date: " + s, pe);
                 }
             }
-            if ((s = in.readLine()) != null) {
-                entry.setAuthor(s);
-            }
+            //
+			// Copyright 2009 to current year.
+			// AVEVA Solutions Ltd and its subsidiaries. All rights reserved.
+			// Modifications by Stefan Eskelid for AVEVA Solutions Ltd.
+			//
+			// Always add username in lower case (for consistency).
+			//
+			if ((s = in.readLine()) != null) {
+				entry.setAuthor(s.toLowerCase());
+			}
             if ((s = in.readLine()) != null) {
                 s = s.replace('\\', '/');
                 entry.setRevision(s);

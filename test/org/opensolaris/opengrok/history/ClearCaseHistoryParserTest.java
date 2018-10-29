@@ -112,13 +112,13 @@ public class ClearCaseHistoryParserTest {
         
         HistoryEntry e1 = result.getHistoryEntries().get(0);
         assertEquals("/main/3", e1.getRevision());
-        assertEquals(author1, e1.getAuthor());
+        assertEquals("username", e1.getAuthor());
         assertEquals(0, e1.getFiles().size());
         assertTrue(e1.getMessage().contains("eeeee"));
 
         HistoryEntry e4 = result.getHistoryEntries().get(3);
         assertEquals("/main/0", e4.getRevision());
-        assertEquals(author2, e4.getAuthor());
+        assertEquals("username2", e4.getAuthor());
         assertEquals(0, e4.getFiles().size());
     }
     
@@ -176,13 +176,13 @@ public class ClearCaseHistoryParserTest {
 
         HistoryEntry e1 = result.getHistoryEntries().get(0);
         assertEquals("/main/3", e1.getRevision());
-        assertEquals(author1, e1.getAuthor());
+        assertEquals("username", e1.getAuthor());
         assertEquals(0, e1.getFiles().size());
         assertTrue(e1.getMessage().contains("prototype"));
 
         HistoryEntry e4 = result.getHistoryEntries().get(3);
         assertEquals("/main/0", e4.getRevision());
-        assertEquals(author2, e4.getAuthor());
+        assertEquals("username2", e4.getAuthor());
         assertEquals(0, e4.getFiles().size());
     }
 
